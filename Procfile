@@ -1,1 +1,0 @@
-bot: java -jar out/artifacts/Telegram_chat_jar/Telegram_chat.jar
