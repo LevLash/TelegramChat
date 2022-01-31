@@ -1,1 +1,1 @@
-bot: java -jar gradle/wrapper/gradle-wrapper.jar
+bot: java -jar out/artifacts/Telegram_chat_jar/Telegram chat.jar
