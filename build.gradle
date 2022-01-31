@@ -1,18 +1,11 @@
-buildscript {
-    repositories {
-        gradlePluginPortal()
-    }
-    dependencies {
-        classpath 'gradle.plugin.com.github.jengelman.gradle.plugins:shadow:7.1.2'
-    }
+
+plugins {
+    id 'java'
+    id "com.github.johnrengelman.shadow" version "6.0.0"
 }
 
 apply plugin: 'com.github.johnrengelman.shadow'
 apply plugin: 'java'
-
-plugins {
-    id 'java'
-}
 
 jar {
     manifest {
