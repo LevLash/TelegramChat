@@ -1,6 +1,4 @@
-package Entities;
-
-import lombok.Data;
+package com.bot.Entities;
 
 import java.io.Serializable;
 

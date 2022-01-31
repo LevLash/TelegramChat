@@ -1,7 +1,6 @@
-package Controllers;
+package com.bot.Controllers;
 
-import Entities.BotUser;
-import lombok.Data;
+import com.bot.Entities.BotUser;
 
 import java.io.Serializable;
 import java.util.ArrayList;

@@ -1,6 +1,6 @@
-package Controllers;
+package com.bot.Controllers;
 
-import Entities.Connection;
+import com.bot.Entities.Connection;
 
 import java.io.Serializable;
 import java.util.ArrayList;

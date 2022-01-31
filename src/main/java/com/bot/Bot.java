@@ -1,6 +1,9 @@
-import Controllers.BotUserController;
-import Controllers.ConnectionController;
-import Entities.BotUser;
+package com.bot;
+
+import com.bot.Controllers.BotUserController;
+import com.bot.Controllers.ConnectionController;
+import com.bot.Entities.BotUser;
+import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.ForwardMessage;
 import org.telegram.telegrambots.meta.api.methods.send.*;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
@@ -15,13 +18,17 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
+@Component
 public class Bot extends TelegramLongPollingBot {
     
     public BotUserController botUserController = new BotUserController();
     public List<String> activeUsers = new ArrayList<>();
     public ConnectionController chatWith = new ConnectionController();
+
+    public Bot() {}
     
-    public static void main(String[] args) {
+//    public static void main(String[] args) {
+    public void runBot() {
         try{
         TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
             telegramBotsApi.registerBot(new Bot());
