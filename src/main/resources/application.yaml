@@ -1,7 +1,7 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/tgbot
-    username: postgres
-    password: postgres
+    url: jdbc:postgresql://ec2-54-229-47-120.eu-west-1.compute.amazonaws.com:5432/d7iv9t9skah3rg
+    username: jugdxhdnqjsaea
+    password: 796da2e3c5584b00e037f8e5a2c4f997175d10b7cfbadb609b7b5eb4ad889104
   jpa:
     generate-ddl: true
