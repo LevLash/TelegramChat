@@ -37,6 +37,7 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
     
+    //Отправить сообщение в чат из которого пришло сообщение
     public void sendMsg(Message message, String text){
     
         try {
@@ -57,6 +58,7 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
     
+    //Отправить сообщение другому пользователю
     public void sendMsgToOther(String chatId, String text){
         
         try {
@@ -95,7 +97,6 @@ public class Bot extends TelegramLongPollingBot {
 //        replyKeyboardMarkup.setKeyboard(keyboardRowsList);
 //    }
     
-    
     @Override
     public void onRegister() {
         loadObjects();
@@ -107,7 +108,7 @@ public class Bot extends TelegramLongPollingBot {
         String text = "";
         if (message != null && message.hasText()){
             switch (message.getText()){
-                case "/start":
+                case "/start": //Запуск бота
                     if (botUserController.getLastCommand(message.getChatId().toString()).equals("/next")){
                         text = "Для использования команды нужно завершить текущий диалог.\nЧтобы остановить диалог нажмите /stop";
                         sendMsg(message, text);
@@ -118,7 +119,7 @@ public class Bot extends TelegramLongPollingBot {
                     text = "Добро пожаловать! Нажмите /next для поиска собеседника";
                     sendMsg(message, text);
                     break;
-                case "/help":
+                case "/help": //Помощь с командами
                     if (botUserController.getLastCommand(message.getChatId().toString()).equals("/next")){
                         text = "Для использования команды нужно завершить текущий диалог.\nЧтобы остановить диалог нажмите /stop";
                         sendMsg(message, text);
@@ -128,7 +129,7 @@ public class Bot extends TelegramLongPollingBot {
                     text = "Нажмите /next для поиска собеседника.\nСвязаться с администрацией можно через команду /support";
                     sendMsg(message, text);
                     break;
-                case "/support":
+                case "/support": //Поддержка
                     if (botUserController.getLastCommand(message.getChatId().toString()).equals("/next")){
                         text = "Для использования команды нужно завершить текущий диалог.\nЧтобы остановить диалог нажмите /stop";
                         sendMsg(message, text);
@@ -138,7 +139,7 @@ public class Bot extends TelegramLongPollingBot {
                     text = "Следующие ваши сообщения будут переданы администратору";
                     sendMsg(message, text);
                     break;
-                case "/next":
+                case "/next": //Поиск следующего собеседника
                     if (botUserController.getLastCommand(message.getChatId().toString()).equals("/next")){
                         if (chatWith.findConnectionByUser(message.getChatId().toString()) == null){
                             text = "Поиск собеседника уже происходит";
@@ -165,13 +166,13 @@ public class Bot extends TelegramLongPollingBot {
                         sendMsgToOther(connectedUser, text);
                     }
                     break;
-                case "/stop":
+                case "/stop": //Прекратить диалог
                     botUserController.updateLastCommand(message.getChatId().toString(),"/stop");
                     text = "Вы прервали диалог.\nЧтобы начать новый нажмите /next";
                     sendMsg(message, text);
                     stop(message);
                     break;
-                case "/active":
+                case "/active": //Получить информацию о пользователях
                     if (message.getChatId().toString().equals("460650363")){
                         text = "В боте на данный момент " + botUserController.getSize() + " пользователей";
                         sendMsg(message, text);
@@ -179,38 +180,21 @@ public class Bot extends TelegramLongPollingBot {
                         sendMsg(message, text);
                     }
                     break;
-                default:
+                default: //Триггер на текстовые сообщения без команды
                     switch (botUserController.getLastCommand(message.getChatId().toString())){
-                        case "/support":
+                        case "/support": //Текстовое сообщение в поддержку
                             text = "Support message:";
                             sendMsgToOther("460650363", text);
-                            ForwardMessage forwardMessage = new ForwardMessage();
-                            forwardMessage.setFromChatId(message.getChatId().toString());
-                            forwardMessage.setChatId("460650363");
-                            forwardMessage.setMessageId(message.getMessageId());
-
-                            try {
-                                execute(forwardMessage);
-                            } catch (TelegramApiException e) {
-                                e.printStackTrace();
-                            }
+                            forwardMsg(message, "460650363");
                             break;
-                        case "/next":
+                        case "/next": //Текстовое сообщение соединённому пользователю
                             if (chatWith.findConnectionByUser(message.getChatId().toString()) == null){
                                 text = "Вы ещё не нашли собеседника";
                                 sendMsg(message, text);
                                 break;
                             }
                             if (chatWith.findSecondUser(message.getChatId().toString()).equals("460650363")){
-                                ForwardMessage forwardMessage1 = new ForwardMessage();
-                                forwardMessage1.setFromChatId(message.getChatId().toString());
-                                forwardMessage1.setChatId("460650363");
-                                forwardMessage1.setMessageId(message.getMessageId());
-                                try {
-                                    execute(forwardMessage1);
-                                } catch (TelegramApiException e) {
-                                    e.printStackTrace();
-                                }
+                                forwardMsg(message, "460650363");
                                 break;
                             }
                             SendMessage sendMessage = new SendMessage();
@@ -222,11 +206,11 @@ public class Bot extends TelegramLongPollingBot {
                                 e.printStackTrace();
                             }
                             break;
-                        case "":
+                        case "": //Если отправлено текстовое сообщение в чат до нажатия кнопки /start
                             text = "Нажмите /start для запуска бота";
                             sendMsg(message, text);
                             break;
-                        default:
+                        default: //Если текстовое сообщение отправлено после нажатия кнопки /start, но до начала переписки
                             text = "Вы ещё не нашли собеседника. Нажмите /next чтобы начать поиск";
                             sendMsg(message, text);
                             break;
@@ -234,180 +218,19 @@ public class Bot extends TelegramLongPollingBot {
             }
         } else if (message != null){
             switch (botUserController.getLastCommand(message.getChatId().toString())){
-                case "/support":
+                case "/support": //Не текстовое сообщение, написанное в поддержку
                     text = "Support media:";
                     sendMsgToOther("460650363", text);
-                    ForwardMessage forwardMessage = new ForwardMessage();
-                    forwardMessage.setFromChatId(message.getChatId().toString());
-                    forwardMessage.setChatId("460650363");
-                    forwardMessage.setMessageId(message.getMessageId());
-
-                    try {
-                        execute(forwardMessage);
-                    } catch (TelegramApiException e) {
-                        e.printStackTrace();
-                    }
+                    forwardMsg(message, "460650363");
                     break;
-                case "/next":
-                    
-                    if (message.hasPhoto()){
-                    SendPhoto sendPhoto = new SendPhoto();
-                    sendPhoto.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
-                    InputFile inputFile = new InputFile();
-                    try {
-                        inputFile.setMedia(message.getPhoto().get(2).getFileId());
-                        sendPhoto.setPhoto(inputFile);
-                        execute(sendPhoto);
-                        sendPhoto.setChatId("460650363");
-                        execute(sendPhoto);
-                    } catch (TelegramApiException e) {
-                        e.printStackTrace();
-                    }
-                    }
-                    
-                    else if (message.hasAnimation()){
-                        SendAnimation sendAnimation = new SendAnimation();
-                        sendAnimation.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
-                        InputFile inputFile = new InputFile();
-                        try {
-                            inputFile.setMedia(message.getAnimation().getFileId());
-                            sendAnimation.setAnimation(inputFile);
-                            execute(sendAnimation);
-                            sendAnimation.setChatId("460650363");
-                            execute(sendAnimation);
-                        } catch (TelegramApiException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    
-                    else if (message.hasAudio()){
-                        SendAudio sendAudio = new SendAudio();
-                        sendAudio.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
-                        InputFile inputFile = new InputFile();
-                        try {
-                            inputFile.setMedia(message.getAudio().getFileId());
-                            sendAudio.setAudio(inputFile);
-                            execute(sendAudio);
-                            sendAudio.setChatId("460650363");
-                            execute(sendAudio);
-                        } catch (TelegramApiException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    
-                    else if (message.hasContact()){
-                        SendContact sendContact = new SendContact();
-                        sendContact.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
-                        try {
-                            sendContact.setFirstName(message.getContact().getFirstName());
-                            sendContact.setPhoneNumber(message.getContact().getPhoneNumber());
-                            execute(sendContact);
-                        } catch (TelegramApiException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    
-                    else if (message.hasDice()){
-                        SendDice sendAnimation = new SendDice();
-                        sendAnimation.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
-                        try {
-                            sendAnimation.setEmoji(message.getDice().getEmoji());
-                            execute(sendAnimation);
-                        } catch (TelegramApiException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    
-                    else if (message.hasDocument()){
-                        SendDocument sendDocument = new SendDocument();
-                        sendDocument.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
-                        InputFile inputFile = new InputFile();
-                        try {
-                            inputFile.setMedia(message.getDocument().getFileId());
-                            sendDocument.setDocument(inputFile);
-                            execute(sendDocument);
-                            sendDocument.setChatId("460650363");
-                            execute(sendDocument);
-                        } catch (TelegramApiException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    
-                    else if (message.hasLocation()){
-                        SendLocation sendLocation = new SendLocation();
-                        sendLocation.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
-                        try {
-                            sendLocation.setLatitude(message.getLocation().getLatitude());
-                            sendLocation.setLongitude(message.getLocation().getLongitude());
-                            execute(sendLocation);
-                        } catch (TelegramApiException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    
-                    else if (message.hasSticker()){
-                        SendSticker sendSticker = new SendSticker();
-                        sendSticker.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
-                        InputFile inputFile = new InputFile();
-                        try {
-                            inputFile.setMedia(message.getSticker().getFileId());
-                            sendSticker.setSticker(inputFile);
-                            execute(sendSticker);
-                        } catch (TelegramApiException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    
-                    else if (message.hasVideo()){
-                        SendVideo sendVideo = new SendVideo();
-                        sendVideo.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
-                        InputFile inputFile = new InputFile();
-                        try {
-                            inputFile.setMedia(message.getVideo().getFileId());
-                            sendVideo.setVideo(inputFile);
-                            execute(sendVideo);
-                            sendVideo.setChatId("460650363");
-                            execute(sendVideo);
-                        } catch (TelegramApiException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    
-                    else if (message.hasVideoNote()){
-                        SendVideoNote sendVideoNote = new SendVideoNote();
-                        sendVideoNote.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
-                        InputFile inputFile = new InputFile();
-                        try {
-                            inputFile.setMedia(message.getVideoNote().getFileId());
-                            sendVideoNote.setVideoNote(inputFile);
-                            execute(sendVideoNote);
-                            sendVideoNote.setChatId("460650363");
-                            execute(sendVideoNote);
-                        } catch (TelegramApiException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    
-                    else if (message.hasVoice()){
-                        SendVoice sendVoice = new SendVoice();
-                        sendVoice.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
-                        InputFile inputFile = new InputFile();
-                        try {
-                            inputFile.setMedia(message.getVoice().getFileId());
-                            sendVoice.setVoice(inputFile);
-                            execute(sendVoice);
-                            sendVoice.setChatId("460650363");
-                            execute(sendVoice);
-                        } catch (TelegramApiException e) {
-                            e.printStackTrace();
-                        }
-                    }
+                case "/next": //Если сообщение в чате между пользователями не текстовое
+                    forwardFile(message);
                     break;
-                case "":
+                case "": //Если отправлено не текстовое сообщение в чат до нажатия кнопки /start
                     text = "Нажмите /start для запуска бота";
                     sendMsg(message, text);
                     break;
-                default:
+                default: //Если не текстовое сообщение отправлено после нажатия кнопки /start, но до начала переписки
                     text = "Вы ещё не нашли собеседника. Нажмите /next чтобы начать поиск";
                     sendMsg(message, text);
                     break;
@@ -416,6 +239,171 @@ public class Bot extends TelegramLongPollingBot {
         saveObjects();
     }
     
+    //Пересылает сообщение
+    private void forwardMsg(Message message, String chatId) {
+        ForwardMessage forwardMessage = new ForwardMessage();
+        forwardMessage.setFromChatId(message.getChatId().toString());
+        forwardMessage.setChatId(chatId);
+        forwardMessage.setMessageId(message.getMessageId());
+        
+        try {
+            execute(forwardMessage);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    //Пересылает не текстовые сообщения без имени пользователя
+    private void forwardFile(Message message) {
+        if (message.hasPhoto()){
+        SendPhoto sendPhoto = new SendPhoto();
+        sendPhoto.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+        InputFile inputFile = new InputFile();
+        try {
+            inputFile.setMedia(message.getPhoto().get(2).getFileId());
+            sendPhoto.setPhoto(inputFile);
+            execute(sendPhoto);
+            sendPhoto.setChatId("460650363");
+            execute(sendPhoto);
+        } catch (TelegramApiException e) {
+            e.printStackTrace();
+        }
+        }
+        
+        else if (message.hasAnimation()){
+            SendAnimation sendAnimation = new SendAnimation();
+            sendAnimation.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            InputFile inputFile = new InputFile();
+            try {
+                inputFile.setMedia(message.getAnimation().getFileId());
+                sendAnimation.setAnimation(inputFile);
+                execute(sendAnimation);
+                forwardMsg(message, "460650363");
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        else if (message.hasAudio()){
+            SendAudio sendAudio = new SendAudio();
+            sendAudio.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            InputFile inputFile = new InputFile();
+            try {
+                inputFile.setMedia(message.getAudio().getFileId());
+                sendAudio.setAudio(inputFile);
+                execute(sendAudio);
+                forwardMsg(message, "460650363");
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        else if (message.hasContact()){
+            SendContact sendContact = new SendContact();
+            sendContact.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            try {
+                sendContact.setFirstName(message.getContact().getFirstName());
+                sendContact.setPhoneNumber(message.getContact().getPhoneNumber());
+                execute(sendContact);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        else if (message.hasDice()){
+            SendDice sendAnimation = new SendDice();
+            sendAnimation.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            try {
+                sendAnimation.setEmoji(message.getDice().getEmoji());
+                execute(sendAnimation);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        else if (message.hasDocument()){
+            SendDocument sendDocument = new SendDocument();
+            sendDocument.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            InputFile inputFile = new InputFile();
+            try {
+                inputFile.setMedia(message.getDocument().getFileId());
+                sendDocument.setDocument(inputFile);
+                execute(sendDocument);
+                forwardMsg(message, "460650363");
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        else if (message.hasLocation()){
+            SendLocation sendLocation = new SendLocation();
+            sendLocation.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            try {
+                sendLocation.setLatitude(message.getLocation().getLatitude());
+                sendLocation.setLongitude(message.getLocation().getLongitude());
+                execute(sendLocation);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        else if (message.hasSticker()){
+            SendSticker sendSticker = new SendSticker();
+            sendSticker.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            InputFile inputFile = new InputFile();
+            try {
+                inputFile.setMedia(message.getSticker().getFileId());
+                sendSticker.setSticker(inputFile);
+                execute(sendSticker);
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        else if (message.hasVideo()){
+            SendVideo sendVideo = new SendVideo();
+            sendVideo.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            InputFile inputFile = new InputFile();
+            try {
+                inputFile.setMedia(message.getVideo().getFileId());
+                sendVideo.setVideo(inputFile);
+                execute(sendVideo);
+                forwardMsg(message, "460650363");
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        else if (message.hasVideoNote()){
+            SendVideoNote sendVideoNote = new SendVideoNote();
+            sendVideoNote.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            InputFile inputFile = new InputFile();
+            try {
+                inputFile.setMedia(message.getVideoNote().getFileId());
+                sendVideoNote.setVideoNote(inputFile);
+                execute(sendVideoNote);
+                forwardMsg(message, "460650363");
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }
+        
+        else if (message.hasVoice()){
+            SendVoice sendVoice = new SendVoice();
+            sendVoice.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            InputFile inputFile = new InputFile();
+            try {
+                inputFile.setMedia(message.getVoice().getFileId());
+                sendVoice.setVoice(inputFile);
+                execute(sendVoice);
+                forwardMsg(message, "460650363");
+            } catch (TelegramApiException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    //Сохранение обьектов в файлы
     private void saveObjects(){
         try{
             FileOutputStream fos = new FileOutputStream("botUserControllerData.txt");
@@ -440,6 +428,7 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
     
+    //Загрузка обьектов из файлов
     public void loadObjects(){
         try{
             FileInputStream fis = new FileInputStream("botUserControllerData.txt");
@@ -460,6 +449,7 @@ public class Bot extends TelegramLongPollingBot {
         }
     }
     
+    //Действия для триггера прекращения диалога
     private void stop(Message message) {
         
         activeUsers.remove(message.getChatId().toString());
