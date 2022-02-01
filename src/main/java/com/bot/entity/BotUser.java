@@ -1,17 +1,23 @@
-package com.bot.Entities;
+package com.bot.entity;
 
+import javax.persistence.Entity;
+import javax.persistence.Id;
 import java.io.Serializable;
 
+@Entity
 public class BotUser  implements Serializable {
+    @Id
     private String chatId;
-    private String user;
+    private String bot_user;
     private String lastCommand;
     
     public BotUser(String chatId, String user, String lastCommand) {
         this.chatId = chatId;
-        this.user = user;
+        this.bot_user = user;
         this.lastCommand = lastCommand;
     }
+
+    public BotUser() {}
     
     public String getChatId() {
         return chatId;
@@ -21,12 +27,12 @@ public class BotUser  implements Serializable {
         this.chatId = chatId;
     }
     
-    public String getUser() {
-        return user;
+    public String getBot_user() {
+        return bot_user;
     }
     
-    public void setUser(String user) {
-        this.user = user;
+    public void setBot_user(String bot_user) {
+        this.bot_user = bot_user;
     }
     
     public String getLastCommand() {

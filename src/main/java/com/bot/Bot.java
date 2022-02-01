@@ -1,8 +1,8 @@
 package com.bot;
 
-import com.bot.Controllers.BotUserController;
-import com.bot.Controllers.ConnectionController;
-import com.bot.Entities.BotUser;
+import com.bot.entity.BotUser;
+import com.bot.service.BotConnectionService;
+import com.bot.service.BotUserService;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.meta.api.methods.ForwardMessage;
 import org.telegram.telegrambots.meta.api.methods.send.*;
@@ -11,8 +11,6 @@ import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-import org.telegram.telegrambots.meta.TelegramBotsApi;
-import org.telegram.telegrambots.updatesreceivers.DefaultBotSession;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -21,21 +19,24 @@ import java.util.List;
 @Component
 public class Bot extends TelegramLongPollingBot {
     
-    public BotUserController botUserController = new BotUserController();
     public List<String> activeUsers = new ArrayList<>();
-    public ConnectionController chatWith = new ConnectionController();
 
-    public Bot() {}
-    
-//    public static void main(String[] args) {
-    public void runBot() {
-        try{
-        TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
-            telegramBotsApi.registerBot(new Bot());
-        } catch (TelegramApiException e){
-            e.printStackTrace();
-        }
+    private final BotUserService botUserService;
+    private final BotConnectionService botConnectionService;
+
+    public Bot(BotUserService botUserService, BotConnectionService botConnectionService) {
+        this.botUserService = botUserService;
+        this.botConnectionService = botConnectionService;
     }
+
+//    public static void main(String[] args) {
+//        try{
+//        TelegramBotsApi telegramBotsApi = new TelegramBotsApi(DefaultBotSession.class);
+//            telegramBotsApi.registerBot(new Bot());
+//        } catch (TelegramApiException e){
+//            e.printStackTrace();
+//        }
+//    }
     
     //Отправить сообщение в чат из которого пришло сообщение
     public void sendMsg(Message message, String text){
@@ -99,7 +100,7 @@ public class Bot extends TelegramLongPollingBot {
     
     @Override
     public void onRegister() {
-        loadObjects();
+//        loadObjects();
     }
     
     @Override
@@ -109,39 +110,48 @@ public class Bot extends TelegramLongPollingBot {
         if (message != null && message.hasText()){
             switch (message.getText()){
                 case "/start": //Запуск бота
-                    if (botUserController.getLastCommand(message.getChatId().toString()).equals("/next")){
+//                    if (botUserController.getLastCommand(message.getChatId().toString()).equals("/next")){
+                    if (botUserService.getLastCommand(message.getChatId().toString()).equals("/next")){
                         text = "Для использования команды нужно завершить текущий диалог.\nЧтобы остановить диалог нажмите /stop";
                         sendMsg(message, text);
                         break;
                     }
-                    botUserController.addUser(new BotUser(message.getChatId().toString(), message.getFrom().getUserName(), "/start"));
-                    botUserController.updateLastCommand(message.getChatId().toString(), "/start");
+//                    botUserController.addUser(new BotUser(message.getChatId().toString(), message.getFrom().getUserName(), "/start"));
+//                    botUserController.updateLastCommand(message.getChatId().toString(), "/start");
+                    botUserService.addUser(new BotUser(message.getChatId().toString(), message.getFrom().getUserName(), "/start"));
+                    botUserService.updateLastCommand(message.getChatId().toString(), "/start");
                     text = "Добро пожаловать! Нажмите /next для поиска собеседника";
                     sendMsg(message, text);
                     break;
                 case "/help": //Помощь с командами
-                    if (botUserController.getLastCommand(message.getChatId().toString()).equals("/next")){
+//                    if (botUserController.getLastCommand(message.getChatId().toString()).equals("/next")){
+                    if (botUserService.getLastCommand(message.getChatId().toString()).equals("/next")){
                         text = "Для использования команды нужно завершить текущий диалог.\nЧтобы остановить диалог нажмите /stop";
                         sendMsg(message, text);
                         break;
                     }
-                    botUserController.updateLastCommand(message.getChatId().toString(),"/help");
+//                    botUserController.updateLastCommand(message.getChatId().toString(),"/help");
+                    botUserService.updateLastCommand(message.getChatId().toString(),"/help");
                     text = "Нажмите /next для поиска собеседника.\nСвязаться с администрацией можно через команду /support";
                     sendMsg(message, text);
                     break;
                 case "/support": //Поддержка
-                    if (botUserController.getLastCommand(message.getChatId().toString()).equals("/next")){
+//                    if (botUserController.getLastCommand(message.getChatId().toString()).equals("/next")){
+                    if (botUserService.getLastCommand(message.getChatId().toString()).equals("/next")){
                         text = "Для использования команды нужно завершить текущий диалог.\nЧтобы остановить диалог нажмите /stop";
                         sendMsg(message, text);
                         break;
                     }
-                    botUserController.updateLastCommand(message.getChatId().toString(),"/support");
+//                    botUserController.updateLastCommand(message.getChatId().toString(),"/support");
+                    botUserService.updateLastCommand(message.getChatId().toString(),"/support");
                     text = "Следующие ваши сообщения будут переданы администратору";
                     sendMsg(message, text);
                     break;
                 case "/next": //Поиск следующего собеседника
-                    if (botUserController.getLastCommand(message.getChatId().toString()).equals("/next")){
-                        if (chatWith.findConnectionByUser(message.getChatId().toString()) == null){
+//                    if (botUserController.getLastCommand(message.getChatId().toString()).equals("/next")){
+                    if (botUserService.getLastCommand(message.getChatId().toString()).equals("/next")){
+//                        if (chatWith.findConnectionByUser(message.getChatId().toString()) == null){
+                        if (botConnectionService.findConnectionByUser(message.getChatId().toString()) == null){
                             text = "Поиск собеседника уже происходит";
                             sendMsg(message, text);
                             break;
@@ -150,8 +160,10 @@ public class Bot extends TelegramLongPollingBot {
                         sendMsg(message, text);
                         stop(message);
                     }
-                    botUserController.addUser(new BotUser(message.getChatId().toString(), message.getFrom().getUserName(), "/next"));
-                    botUserController.updateLastCommand(message.getChatId().toString(),"/next");
+//                    botUserController.addUser(new BotUser(message.getChatId().toString(), message.getFrom().getUserName(), "/next"));
+//                    botUserController.updateLastCommand(message.getChatId().toString(),"/next");
+                    botUserService.addUser(new BotUser(message.getChatId().toString(), message.getFrom().getUserName(), "/next"));
+                    botUserService.updateLastCommand(message.getChatId().toString(),"/next");
                     text = "Поиск собеседника. Для прекращения нажмите /stop";
                     sendMsg(message, text);
                     if (activeUsers.isEmpty()){
@@ -159,7 +171,8 @@ public class Bot extends TelegramLongPollingBot {
                     }else {
                         String connectedUser = activeUsers.get(activeUsers.size() - 1);
                         activeUsers.remove(connectedUser);
-                        chatWith.addConnection(message.getChatId().toString(), connectedUser);
+//                        chatWith.addConnection(message.getChatId().toString(), connectedUser);
+                        botConnectionService.addConnection(message.getChatId().toString(), connectedUser);
                         text = "Собеседник найден!\n" +
                                 "Чтобы остановить диалог нажмите /stop\nЧтобы начать новый нажмите /next";
                         sendMsg(message, text);
@@ -167,38 +180,45 @@ public class Bot extends TelegramLongPollingBot {
                     }
                     break;
                 case "/stop": //Прекратить диалог
-                    botUserController.updateLastCommand(message.getChatId().toString(),"/stop");
+//                    botUserController.updateLastCommand(message.getChatId().toString(),"/stop");
+                    botUserService.updateLastCommand(message.getChatId().toString(),"/stop");
                     text = "Вы прервали диалог.\nЧтобы начать новый нажмите /next";
                     sendMsg(message, text);
                     stop(message);
                     break;
                 case "/active": //Получить информацию о пользователях
                     if (message.getChatId().toString().equals("460650363")){
-                        text = "В боте на данный момент " + botUserController.getSize() + " пользователей";
+//                        text = "В боте на данный момент " + botUserController.getSize() + " пользователей";
+                        text = "В боте на данный момент " + botUserService.getSize() + " пользователей";
                         sendMsg(message, text);
-                        text = "Общаются на данный момент " + botUserController.getNowInDialog() + " пользователей";
+//                        text = "Общаются на данный момент " + botUserController.getNowInDialog() + " пользователей";
+                        text = "Общаются на данный момент " + botUserService.getNowInDialog() + " пользователей";
                         sendMsg(message, text);
                     }
                     break;
                 default: //Триггер на текстовые сообщения без команды
-                    switch (botUserController.getLastCommand(message.getChatId().toString())){
+//                    switch (botUserController.getLastCommand(message.getChatId().toString())){
+                    switch (botUserService.getLastCommand(message.getChatId().toString())){
                         case "/support": //Текстовое сообщение в поддержку
                             text = "Support message:";
                             sendMsgToOther("460650363", text);
                             forwardMsg(message, "460650363");
                             break;
                         case "/next": //Текстовое сообщение соединённому пользователю
-                            if (chatWith.findConnectionByUser(message.getChatId().toString()) == null){
+//                            if (chatWith.findConnectionByUser(message.getChatId().toString()) == null){
+                            if (botConnectionService.findConnectionByUser(message.getChatId().toString()) == null){
                                 text = "Вы ещё не нашли собеседника";
                                 sendMsg(message, text);
                                 break;
                             }
-                            if (chatWith.findSecondUser(message.getChatId().toString()).equals("460650363")){
+//                            if (chatWith.findSecondUser(message.getChatId().toString()).equals("460650363")){
+                            if (botConnectionService.findSecondUser(message.getChatId().toString()).equals("460650363")){
                                 forwardMsg(message, "460650363");
                                 break;
                             }
                             SendMessage sendMessage = new SendMessage();
-                            sendMessage.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+//                            sendMessage.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+                            sendMessage.setChatId(botConnectionService.findSecondUser(message.getChatId().toString()));
                             try {
                                 sendMessage.setText(message.getText());
                                 execute(sendMessage);
@@ -217,7 +237,8 @@ public class Bot extends TelegramLongPollingBot {
                     }
             }
         } else if (message != null){
-            switch (botUserController.getLastCommand(message.getChatId().toString())){
+//            switch (botUserController.getLastCommand(message.getChatId().toString())){
+            switch (botUserService.getLastCommand(message.getChatId().toString())){
                 case "/support": //Не текстовое сообщение, написанное в поддержку
                     text = "Support media:";
                     sendMsgToOther("460650363", text);
@@ -236,7 +257,7 @@ public class Bot extends TelegramLongPollingBot {
                     break;
             }
         }
-        saveObjects();
+//        saveObjects();
     }
     
     //Пересылает сообщение
@@ -257,7 +278,8 @@ public class Bot extends TelegramLongPollingBot {
     private void forwardFile(Message message) {
         if (message.hasPhoto()){
         SendPhoto sendPhoto = new SendPhoto();
-        sendPhoto.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+//        sendPhoto.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+        sendPhoto.setChatId(botConnectionService.findSecondUser(message.getChatId().toString()));
         InputFile inputFile = new InputFile();
         try {
             inputFile.setMedia(message.getPhoto().get(2).getFileId());
@@ -272,7 +294,8 @@ public class Bot extends TelegramLongPollingBot {
         
         else if (message.hasAnimation()){
             SendAnimation sendAnimation = new SendAnimation();
-            sendAnimation.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+//            sendAnimation.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            sendAnimation.setChatId(botConnectionService.findSecondUser(message.getChatId().toString()));
             InputFile inputFile = new InputFile();
             try {
                 inputFile.setMedia(message.getAnimation().getFileId());
@@ -286,7 +309,8 @@ public class Bot extends TelegramLongPollingBot {
         
         else if (message.hasAudio()){
             SendAudio sendAudio = new SendAudio();
-            sendAudio.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+//            sendAudio.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            sendAudio.setChatId(botConnectionService.findSecondUser(message.getChatId().toString()));
             InputFile inputFile = new InputFile();
             try {
                 inputFile.setMedia(message.getAudio().getFileId());
@@ -300,7 +324,8 @@ public class Bot extends TelegramLongPollingBot {
         
         else if (message.hasContact()){
             SendContact sendContact = new SendContact();
-            sendContact.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+//            sendContact.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            sendContact.setChatId(botConnectionService.findSecondUser(message.getChatId().toString()));
             try {
                 sendContact.setFirstName(message.getContact().getFirstName());
                 sendContact.setPhoneNumber(message.getContact().getPhoneNumber());
@@ -312,7 +337,8 @@ public class Bot extends TelegramLongPollingBot {
         
         else if (message.hasDice()){
             SendDice sendAnimation = new SendDice();
-            sendAnimation.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+//            sendAnimation.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            sendAnimation.setChatId(botConnectionService.findSecondUser(message.getChatId().toString()));
             try {
                 sendAnimation.setEmoji(message.getDice().getEmoji());
                 execute(sendAnimation);
@@ -323,7 +349,8 @@ public class Bot extends TelegramLongPollingBot {
         
         else if (message.hasDocument()){
             SendDocument sendDocument = new SendDocument();
-            sendDocument.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+//            sendDocument.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            sendDocument.setChatId(botConnectionService.findSecondUser(message.getChatId().toString()));
             InputFile inputFile = new InputFile();
             try {
                 inputFile.setMedia(message.getDocument().getFileId());
@@ -337,7 +364,8 @@ public class Bot extends TelegramLongPollingBot {
         
         else if (message.hasLocation()){
             SendLocation sendLocation = new SendLocation();
-            sendLocation.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+//            sendLocation.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            sendLocation.setChatId(botConnectionService.findSecondUser(message.getChatId().toString()));
             try {
                 sendLocation.setLatitude(message.getLocation().getLatitude());
                 sendLocation.setLongitude(message.getLocation().getLongitude());
@@ -349,7 +377,8 @@ public class Bot extends TelegramLongPollingBot {
         
         else if (message.hasSticker()){
             SendSticker sendSticker = new SendSticker();
-            sendSticker.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+//            sendSticker.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            sendSticker.setChatId(botConnectionService.findSecondUser(message.getChatId().toString()));
             InputFile inputFile = new InputFile();
             try {
                 inputFile.setMedia(message.getSticker().getFileId());
@@ -362,7 +391,8 @@ public class Bot extends TelegramLongPollingBot {
         
         else if (message.hasVideo()){
             SendVideo sendVideo = new SendVideo();
-            sendVideo.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+//            sendVideo.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            sendVideo.setChatId(botConnectionService.findSecondUser(message.getChatId().toString()));
             InputFile inputFile = new InputFile();
             try {
                 inputFile.setMedia(message.getVideo().getFileId());
@@ -376,7 +406,8 @@ public class Bot extends TelegramLongPollingBot {
         
         else if (message.hasVideoNote()){
             SendVideoNote sendVideoNote = new SendVideoNote();
-            sendVideoNote.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+//            sendVideoNote.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            sendVideoNote.setChatId(botConnectionService.findSecondUser(message.getChatId().toString()));
             InputFile inputFile = new InputFile();
             try {
                 inputFile.setMedia(message.getVideoNote().getFileId());
@@ -390,7 +421,8 @@ public class Bot extends TelegramLongPollingBot {
         
         else if (message.hasVoice()){
             SendVoice sendVoice = new SendVoice();
-            sendVoice.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+//            sendVoice.setChatId(chatWith.findSecondUser(message.getChatId().toString()));
+            sendVoice.setChatId(botConnectionService.findSecondUser(message.getChatId().toString()));
             InputFile inputFile = new InputFile();
             try {
                 inputFile.setMedia(message.getVoice().getFileId());
@@ -404,50 +436,58 @@ public class Bot extends TelegramLongPollingBot {
     }
     
     //Сохранение обьектов в файлы
-    private void saveObjects(){
-        try{
-            FileOutputStream fos = new FileOutputStream("botUserControllerData.txt");
-            ObjectOutputStream outStream = new ObjectOutputStream(fos);
-            outStream.writeObject(botUserController);
-            outStream.flush();
-            outStream.close();
-        }catch(Exception e)
-        {
-            System.out.println("Error: " + e.getMessage());
-        }
+//    private void saveObjects(){
+//        botUserRepository.save(botUserController);
+//        botUserRepository.save(botUserController);
+//        connectionRepository.save(chatWith);
+//        try{
+//            FileOutputStream fos = new FileOutputStream("botUserControllerData.txt");
+//            ObjectOutputStream outStream = new ObjectOutputStream(fos);
+//            outStream.writeObject(botUserController);
+//            outStream.flush();
+//            outStream.close();
+//        }catch(Exception e)
+//        {
+//            System.out.println("Error: " + e.getMessage());
+//        }
+//
+//        try{
+//            FileOutputStream fos = new FileOutputStream("chatWithData.txt");
+//            ObjectOutputStream outStream = new ObjectOutputStream(fos);
+//            outStream.writeObject(chatWith);
+//            outStream.flush();
+//            outStream.close();
+//        }catch(Exception e)
+//        {
+//            System.out.println("Error: " + e.getMessage());
+//        }
+//    }
     
-        try{
-            FileOutputStream fos = new FileOutputStream("chatWithData.txt");
-            ObjectOutputStream outStream = new ObjectOutputStream(fos);
-            outStream.writeObject(chatWith);
-            outStream.flush();
-            outStream.close();
-        }catch(Exception e)
-        {
-            System.out.println("Error: " + e.getMessage());
-        }
-    }
-    
+
     //Загрузка обьектов из файлов
-    public void loadObjects(){
-        try{
-            FileInputStream fis = new FileInputStream("botUserControllerData.txt");
-            ObjectInputStream inputStream = new ObjectInputStream(fis);
-                botUserController = (BotUserController)inputStream.readObject();
-            inputStream.close();
-        }catch(Exception e){
-            System.out.println("Error: " + e.getMessage());
-        }
-    
-        try{
-            FileInputStream fis = new FileInputStream("chatWithData.txt");
-            ObjectInputStream inputStream = new ObjectInputStream(fis);
-                chatWith = (ConnectionController)inputStream.readObject();
-            inputStream.close();
-        }catch(Exception e){
-            System.out.println("Error: " + e.getMessage());
-        }
-    }
+//    public void loadObjects(){
+//
+//        botUserController = botUserRepository.findAll().get(0);
+//        System.out.println(botUserRepository.findAll().size());
+//        chatWith = connectionRepository.findAll().get(0);
+//        try{
+//            FileInputStream fis = new FileInputStream("botUserControllerData.txt");
+//            ObjectInputStream inputStream = new ObjectInputStream(fis);
+//                botUserController = (BotUserController)inputStream.readObject();
+//            inputStream.close();
+//        }catch(Exception e){
+//            System.out.println("Error: " + e.getMessage());
+//        }
+//
+//        try{
+//            FileInputStream fis = new FileInputStream("chatWithData.txt");
+//            ObjectInputStream inputStream = new ObjectInputStream(fis);
+//                chatWith = (ConnectionController)inputStream.readObject();
+//            inputStream.close();
+//        }catch(Exception e){
+//            System.out.println("Error: " + e.getMessage());
+//        }
+//    }
     
     //Действия для триггера прекращения диалога
     private void stop(Message message) {
@@ -455,10 +495,14 @@ public class Bot extends TelegramLongPollingBot {
         activeUsers.remove(message.getChatId().toString());
         String text;
         text = "Ваш собеседник прервал диалог.\nЧтобы начать новый нажмите /next";
-        sendMsgToOther(chatWith.findSecondUser(message.getChatId().toString()), text);
-        botUserController.updateLastCommand(chatWith.findSecondUser(message.getChatId().toString()),
+//        sendMsgToOther(chatWith.findSecondUser(message.getChatId().toString()), text);
+        sendMsgToOther(botConnectionService.findSecondUser(message.getChatId().toString()), text);
+//        botUserController.updateLastCommand(chatWith.findSecondUser(message.getChatId().toString()),
+//        botUserService.updateLastCommand(chatWith.findSecondUser(message.getChatId().toString()),
+        botUserService.updateLastCommand(botConnectionService.findSecondUser(message.getChatId().toString()),
                 "/stop");
-        chatWith.removeConnection(message.getChatId().toString());
+//        chatWith.removeConnection(message.getChatId().toString());
+        botConnectionService.removeConnection(message.getChatId().toString());
     }
     
     @Override
